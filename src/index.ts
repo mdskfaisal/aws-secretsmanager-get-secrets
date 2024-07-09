@@ -31,53 +31,53 @@ export async function run(): Promise<void> {
         core.info('Building secrets list...');
         const secretIds: string[] = await buildSecretsList(client, secretConfigInputs, nameTransformation);
 
-        core.debug('Initializing secretsToCleanup array');
+        core.info('Initializing secretsToCleanup array');
         let secretsToCleanup = [] as string[];
 
-        core.debug('Logging info about secret name transformation');
+        core.info('Logging info about secret name transformation');
         core.info('Your secret names may be transformed in order to be valid environment variables (see README). Enable Debug logging in order to view the new environment names.');
 
         core.debug('Starting loop to process each secret');
         for (let secretId of secretIds) {
-            core.debug(`Processing secret: ${secretId}`);
+            core.info(`Processing secret: ${secretId}`);
             
-            core.debug('Extracting alias and secretId');
+            core.info('Extracting alias and secretId');
             let secretAlias: string | undefined = undefined;
             [secretAlias, secretId] = extractAliasAndSecretIdFromInput(secretId, nameTransformation);
 
-            core.debug(`Checking if secretId is ARN: ${secretId}`);
+            core.info(`Checking if secretId is ARN: ${secretId}`);
             const isArn = isSecretArn(secretId);
 
             try {
-                core.debug(`Getting secret value for: ${secretId}`);
+                core.info(`Getting secret value for: ${secretId}`);
                 const secretValueResponse : SecretValueResponse = await getSecretValue(client, secretId);
                 const secretValue = secretValueResponse.secretValue;
 
-                core.debug('Checking for blank prefix and JSON parsing');
+                core.info('Checking for blank prefix and JSON parsing');
                 if ((secretAlias === '') && !(parseJsonSecrets && isJSONString(secretValue))) {
                     core.debug('Setting secretAlias to undefined due to blank prefix');
                     secretAlias = undefined;
                 }
 
-                core.debug('Setting secretAlias if undefined');
+                core.info('Setting secretAlias if undefined');
                 if (secretAlias === undefined) {
                     secretAlias = isArn ? secretValueResponse.name : secretId;
                 }
 
-                core.debug(`Injecting secret: ${secretAlias}`);
+                core.info(`Injecting secret: ${secretAlias}`);
                 const injectedSecrets = injectSecret(secretAlias, secretValue, parseJsonSecrets, nameTransformation);
-                core.debug('Updating secretsToCleanup');
+                core.info('Updating secretsToCleanup');
                 secretsToCleanup = [...secretsToCleanup, ...injectedSecrets];
             } catch (err) {
-                core.debug(`Error fetching secret: ${secretId}`);
+                core.info(`Error fetching secret: ${secretId}`);
                 core.setFailed(`Failed to fetch secret: '${secretId}'. Error: ${err}.`)
             } 
         }
 
-        core.debug('Exporting cleanup variable');
+        core.info('Exporting cleanup variable');
         core.exportVariable(CLEANUP_NAME, JSON.stringify(secretsToCleanup));
 
-        core.debug('Logging completion message');
+        core.info('Logging completion message');
         core.info("Completed adding secrets.");
     } catch (error) {
         core.debug('Caught error in run function');
