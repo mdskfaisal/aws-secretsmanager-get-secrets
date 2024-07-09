@@ -28,8 +28,18 @@ export async function run(): Promise<void> {
         const nameTransformation = parseTransformationFunction(core.getInput('name-transformation'));
 
         core.debug('Building secrets list');
-        core.info('Building secrets list...');
+        core.info('Building secrets list...123');
+        core.debug('Building secrets list');
+        core.info('Building secrets list...123');
         const secretIds: string[] = await buildSecretsList(client, secretConfigInputs, nameTransformation);
+        
+        // Add these lines to print the size of the secretIds array
+        core.debug(`Number of secrets in secretIds: ${secretIds.length}`);
+        core.info(`Number of secrets to process: ${secretIds.length}`);
+        
+        if (secretIds.length === 0) {
+            core.warning('The secretIds list is empty. No secrets will be processed.');
+        }
 
         core.info('Initializing secretsToCleanup array');
         let secretsToCleanup = [] as string[];
